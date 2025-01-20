@@ -1,0 +1,55 @@
+
+import os
+from pdf2image import convert_from_path
+import pytesseract
+
+def convert_pdf_to_text(pdf_path, output_txt_path, poppler_path=None):
+
+    if not os.path.exists(pdf_path):
+        raise FileNotFoundError(f"The file {pdf_path} does not exist.")
+
+
+    if os.name == 'nt':
+        pytesseract.pytesseract.tesseract_cmd = r"C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
+        if not os.path.exists(pytesseract.pytesseract.tesseract_cmd):
+            raise FileNotFoundError("Tesseract OCR executable not found at the default path.")
+
+
+    try:
+        images = convert_from_path(pdf_path, poppler_path=poppler_path)
+    except Exception as e:
+        raise RuntimeError(f"Error during PDF to image conversion: {e}")
+
+
+    extracted_text = []
+
+
+    for page_num, image in enumerate(images, start=1):
+
+        image = image.convert("L")
+
+
+        page_text = pytesseract.image_to_string(image, config='--psm 6')
+
+
+        extracted_text.append(f"--- Page {page_num} ---\n{page_text}\n")
+
+
+    try:
+        with open(output_txt_path, 'w', encoding='utf-8') as output_file:
+            output_file.writelines(extracted_text)
+    except Exception as e:
+        raise RuntimeError(f"Error writing to output file: {e}")
+
+    print(f"Text extracted and saved to {output_txt_path}")
+
+
+if __name__ == "_main_":
+    pdf_path = "numbers image .pdf"
+    output_txt_path = "name1.txt"
+    poppler_path = r"C:\\Program Files (x86)\\poppler-24.08.0\\Library\\bin"
+
+    try:
+        convert_pdf_to_text(pdf_path, output_txt_path, poppler_path=poppler_path)
+    except Exception as e:
+        print(f"An error occurred: {e}")
